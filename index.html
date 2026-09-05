@@ -17,14 +17,20 @@
     --ground: #0e0e10;
     --panel: #9a467e;
 
-    --stroke: 3px;
-    --drop: 0 6px 0 rgba(0,0,0,0.55);
+    /* Everything below is in rem, so the whole interface — outlines, corners,
+       posters, badges, the panda — grows with the root size set on <html>
+       instead of staying pinned to a phone's proportions on a 27" monitor. */
+    --stroke: 0.19rem;
+    --drop: 0 0.38rem 0 rgba(0,0,0,0.55);
 
     /* Corners: a gentle squircle. border-radius is the fallback everywhere;
        corner-shape refines it to a superellipse where the browser knows it. */
-    --r-card: 20px;
-    --r-mid: 12px;
-    --r-small: 9px;
+    --r-card: 1.25rem;
+    --r-mid: 0.75rem;
+    --r-small: 0.56rem;
+
+    --badge: 2.35rem;   /* the rating circle — sized to hold "10" without ovaling */
+    --dot: 2.05rem;     /* the play circle */
   }
 
   /* The theme attribute lives on #app, not on the root: the artifact viewer
@@ -38,7 +44,6 @@
     --chip-on-bg: #3e1616; --chip-on-fg: #fbf3e6;
     --line: var(--line);
     --underline: var(--underline);
-    --dot-off: var(--dot-off);
 
     --orange: #e07a00;  --orange-lo: #faeed9;
     --good: #2f7d3a; --good-lo: #d8f0d4;
@@ -57,7 +62,6 @@
     --chip-on-bg: #f3e7d9; --chip-on-fg: #241d1c;
     --line: rgba(243,231,217,0.14);
     --underline: rgba(243,231,217,0.26);
-    --dot-off: #4a3c39;
 
     --orange: #f09a3c;  --orange-lo: #3a2c1c;
     --good: #8fd39a; --good-lo: #24382a;
@@ -68,6 +72,10 @@
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; }
+  /* One dial for the whole interface. It holds at 16px on phones, where the
+     layout is already tight, and climbs with the viewport: ~18.8px on a 1440
+     monitor, capped at 21px so a 4K panel doesn't run away with it. */
+  html { font-size: clamp(16px, 14.2px + 0.32vw, 21px); }
   body {
     background-color: var(--ground);
     /* one painted grove instead of a repeating tile: no seams, and it holds
@@ -79,7 +87,7 @@
     background-repeat: no-repeat;
     color: #f3e7d9;
     font-family: Nunito, "Segoe UI", system-ui, -apple-system, sans-serif;
-    font-size: 16px; line-height: 1.45;
+    font-size: 1rem; line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
@@ -93,9 +101,9 @@
   }
   a { color: inherit; text-decoration: none; }
   button { font-family: inherit; -webkit-appearance: none; appearance: none; }
-  :focus-visible { outline: 3px solid #ffd166; outline-offset: 2px; }
+  :focus-visible { outline: 0.19rem solid #ffd166; outline-offset: 0.13rem; }
 
-  .shell { max-width: 700px; margin: 0 auto; padding: 74px 16px 90px; position: relative; z-index: 1; }
+  .shell { max-width: 50rem; margin: 0 auto; padding: 4.6rem 1rem 5.6rem; position: relative; z-index: 1; }
 
   /* ---------- one whole card: the panda lies on its top edge ---------- */
   .card {
@@ -112,70 +120,70 @@
     border-bottom: var(--stroke) solid var(--edge);
     border-radius: calc(var(--r-card) - var(--stroke)) calc(var(--r-card) - var(--stroke)) 0 0;
     corner-shape: superellipse(1.6);
-    padding: 16px 18px 16px 196px;
-    min-height: 68px;
+    padding: 1rem 1.15rem 1rem 12.25rem;
+    min-height: 4.25rem;
     display: flex; align-items: center;
-    color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,0.3);
+    color: #fff; text-shadow: 0 0.13rem 0 rgba(0,0,0,0.3);
   }
-  .card > .body { padding: 16px 18px 18px; }
+  .card > .body { padding: 1rem 1.15rem 1.15rem; }
   .panda {
     position: absolute;
     /* Her underside's highest point is 43.5% down the art (70px of 161). At
        this width that lands ~4px below the card's top edge, so she overlaps the
        edge instead of meeting it and no background can show through under her. */
-    left: -15px; top: -42px;
-    width: 186px; height: auto;
+    left: -0.94rem; top: -2.63rem;
+    width: 11.6rem; height: auto;
     z-index: 3; pointer-events: none;
-    filter: drop-shadow(0 4px 0 rgba(0,0,0,0.4));
+    filter: drop-shadow(0 0.25rem 0 rgba(0,0,0,0.4));
   }
   /* break-anywhere is the safety net: the name is one long unbreakable word, and
      without it a narrow screen would be pushed into horizontal scrolling */
   h1 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 
   .search-wrap { position: relative; display: flex; align-items: center; color: var(--orange); }
-  .search-wrap > svg { position: absolute; left: 13px; width: 16px; height: 16px; color: var(--text-soft); pointer-events: none; }
+  .search-wrap > svg { position: absolute; left: 0.82rem; width: 1rem; height: 1rem; color: var(--text-soft); pointer-events: none; }
   .search-wrap input {
-    width: 100%; border: 2px solid var(--edge); border-radius: 999px; background: var(--surface-2); color: var(--text);
-    padding: 9px 40px 9px 36px; font-size: 0.95rem; font-family: inherit; font-weight: 600;
+    width: 100%; border: 0.13rem solid var(--edge); border-radius: 999px; background: var(--surface-2); color: var(--text);
+    padding: 0.56rem 2.5rem 0.56rem 2.25rem; font-size: 0.95rem; font-family: inherit; font-weight: 600;
   }
   .search-wrap input::placeholder { color: var(--text-soft); font-weight: 600; }
-  .search-wrap input:focus { outline: none; box-shadow: inset 0 0 0 2px currentColor; }
+  .search-wrap input:focus { outline: none; box-shadow: inset 0 0 0 0.13rem currentColor; }
   .search-clear {
-    position: absolute; right: 8px; border: none; background: var(--chip-on-bg); color: var(--chip-on-fg);
-    width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 0.78rem;
+    position: absolute; right: 0.5rem; border: none; background: var(--chip-on-bg); color: var(--chip-on-fg);
+    width: 1.4rem; height: 1.4rem; border-radius: 50%; cursor: pointer; font-size: 0.78rem;
     display: flex; align-items: center; justify-content: center;
   }
-  .chipbar { display: flex; align-items: center; gap: 6px; margin-top: 11px; flex-wrap: wrap; }
+  .chipbar { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.7rem; flex-wrap: wrap; }
   .chipbar .lbl { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-soft); }
   .chip {
-    border: 2px solid var(--edge); border-radius: var(--r-small);
+    border: 0.13rem solid var(--edge); border-radius: var(--r-small);
     corner-shape: superellipse(1.6);
     background: var(--surface-2); color: var(--text);
-    padding: 4px 11px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 4px;
+    padding: 0.28rem 0.7rem; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.25rem;
   }
   .chip.on { background: var(--chip-on-bg); color: var(--chip-on-fg); }
   .chip .arr { font-size: 0.7em; }
 
   /* view + theme switches: pushed to the far end of the sort row, so on a narrow
      screen they wrap onto their own line instead of squeezing the chips */
-  .tools { margin-left: auto; display: flex; gap: 6px; }
+  .tools { margin-left: auto; display: flex; gap: 0.4rem; }
   .tool {
-    width: 30px; height: 30px; padding: 0; cursor: pointer;
-    border: 2px solid var(--edge); border-radius: var(--r-small);
+    width: 1.95rem; height: 1.95rem; padding: 0; cursor: pointer;
+    border: 0.13rem solid var(--edge); border-radius: var(--r-small);
     corner-shape: superellipse(1.6);
     background: var(--surface-2); color: var(--text);
     display: flex; align-items: center; justify-content: center;
   }
   .tool:hover { background: var(--orange-lo); }
-  .tool svg { width: 15px; height: 15px; }
+  .tool svg { width: 0.95rem; height: 0.95rem; }
 
   /* ---------- rows ---------- */
-  .rows { list-style: none; margin: 16px 0 0; padding: 0; }
-  .row { border-top: 2px solid var(--line); }
+  .rows { list-style: none; margin: 1rem 0 0; padding: 0; }
+  .row { border-top: 0.13rem solid var(--line); }
   .row:first-child { border-top: none; }
   .row-main {
-    width: 100%; display: flex; align-items: center; gap: 14px; padding: 13px 2px;
+    width: 100%; display: flex; align-items: center; gap: 0.88rem; padding: 0.8rem 0.13rem;
     border: none; background: none; text-align: left; cursor: pointer; color: var(--text); font-family: inherit;
   }
   .row-num {
@@ -187,12 +195,12 @@
      loads — sits on top. Where external images are blocked (the artifact
      viewer's CSP) the image never appears and the letter simply stays. */
   .poster-slot {
-    width: 96px; height: 144px; flex: none;
-    border: 2px solid var(--edge);
+    width: 6rem; height: 9rem; flex: none;
+    border: 0.13rem solid var(--edge);
     border-radius: var(--r-mid); corner-shape: superellipse(1.6);
     position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 2.3rem; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,0.35);
+    font-weight: 900; font-size: 2.3rem; color: #fff; text-shadow: 0 0.13rem 0 rgba(0,0,0,0.35);
   }
   .poster-slot img {
     position: absolute; inset: 0; width: 100%; height: 100%;
@@ -206,60 +214,65 @@
   .row-title {
     display: inline; color: inherit;
     font-weight: 800; font-size: 1.05rem; line-height: 1.25; overflow-wrap: anywhere;
-    text-decoration: underline; text-decoration-thickness: 2px;
-    text-decoration-color: var(--underline); text-underline-offset: 3px;
+    text-decoration: underline; text-decoration-thickness: 0.13rem;
+    text-decoration-color: var(--underline); text-underline-offset: 0.2rem;
   }
   .row-title:hover { color: var(--mid); text-decoration-color: var(--orange); }
   .row-sub { display: block; font-size: 0.79rem; font-weight: 600; color: var(--text-soft); margin-top: 4px; }
-  .row-right { display: flex; align-items: center; gap: 7px; flex: none; }
+  .row-right { display: flex; align-items: center; gap: 0.5rem; flex: none; }
+  /* Both badges are circles of a fixed size rather than text with padding, so a
+     two-digit 10 stays as round as a single-digit 8. */
   .pill {
-    border: 2px solid var(--edge); border-radius: 999px; padding: 2px 8px;
-    font-size: 0.79rem; font-weight: 800; font-family: "JetBrains Mono", monospace;
-    flex: none; text-align: center; min-width: 45px;
+    width: var(--badge); height: var(--badge); flex: none;
+    border: 0.13rem solid var(--edge); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; font-weight: 800;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.03em;
   }
   .pill.good { background: var(--good-lo); color: var(--good); }
   .pill.mid  { background: var(--mid-lo);  color: var(--mid); }
   .pill.bad  { background: var(--bad-lo);  color: var(--bad); }
-  .pill.none { background: var(--grey-lo); color: var(--grey); font-family: Nunito, sans-serif; font-size: 0.72rem; }
+  .pill.none {
+    background: var(--grey-lo); color: var(--grey);
+    font-family: Nunito, sans-serif; font-size: 0.63rem; letter-spacing: 0;
+  }
   .vod-dot {
-    width: 23px; height: 23px; border-radius: 50%; flex: none;
-    border: 2px solid var(--edge); background: var(--orange); color: #fff;
+    width: var(--dot); height: var(--dot); border-radius: 50%; flex: none;
+    border: 0.13rem solid var(--edge); background: var(--orange); color: #fff;
     display: flex; align-items: center; justify-content: center;
   }
-  .vod-dot svg { width: 10px; height: 10px; }
-  /* NB: modifier is .off — .empty is the empty-result block, whose padding would
-     stretch this dot into an oval. */
-  .vod-dot.off { background: var(--dot-off); color: var(--text-soft); }
+  .vod-dot svg { width: 0.72rem; height: 0.72rem; }
   .chev { color: var(--text-soft); flex: none; display: flex; transition: transform 0.22s ease; }
-  .chev svg { width: 15px; height: 15px; }
+  .chev svg { width: 1rem; height: 1rem; }
   .row.open .chev { transform: rotate(90deg); }
 
   .reveal { overflow: hidden; max-height: 0; transition: max-height 0.26s ease; }
-  .row.open .reveal { max-height: 340px; }
-  .reveal-in { padding: 2px 2px 14px 126px; display: flex; flex-direction: column; gap: 7px; }
+  .row.open .reveal { max-height: 24rem; }
+  .reveal-in { padding: 0.13rem 0.13rem 0.9rem 7.9rem; display: flex; flex-direction: column; gap: 0.45rem; }
   .vod-link {
-    border: 2px solid var(--edge); border-radius: var(--r-mid); corner-shape: superellipse(1.6);
-    background: var(--surface-2); padding: 8px 11px;
-    display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.85rem; color: var(--text);
+    border: 0.13rem solid var(--edge); border-radius: var(--r-mid); corner-shape: superellipse(1.6);
+    background: var(--surface-2); padding: 0.5rem 0.7rem;
+    display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.85rem; color: var(--text);
   }
   .vod-link:hover { background: var(--orange-lo); }
-  .vod-link svg { width: 13px; height: 13px; flex: none; color: var(--orange); }
+  .vod-link svg { width: 0.85rem; height: 0.85rem; flex: none; color: var(--orange); }
   .vod-link .lab { flex: 1; min-width: 0; }
   .no-vod { font-size: 0.85rem; font-weight: 700; color: var(--text-soft); }
 
   /* ---------- tiles ---------- */
   .grid {
-    list-style: none; margin: 16px 0 0; padding: 0;
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 14px;
+    list-style: none; margin: 1rem 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(8.6rem, 1fr)); gap: 0.9rem;
   }
-  .tile { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .tile { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
   .tile-art {
     position: relative; width: 100%; aspect-ratio: 2 / 3; cursor: pointer;
-    border: 2px solid var(--edge);
+    border: 0.13rem solid var(--edge);
     border-radius: var(--r-mid); corner-shape: superellipse(1.6);
     overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 2.6rem; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,0.35);
+    font-weight: 900; font-size: 2.6rem; color: #fff; text-shadow: 0 0.13rem 0 rgba(0,0,0,0.35);
   }
   .tile-art img {
     position: absolute; inset: 0; width: 100%; height: 100%;
@@ -267,35 +280,29 @@
     opacity: 0; transition: opacity 0.18s ease;
   }
   .tile-art img.ok { opacity: 1; }
-  .tile-art .pill { position: absolute; top: 6px; right: 6px; z-index: 1; min-width: 0; padding: 1px 7px; font-size: 0.72rem; }
-  .tile-dot {
-    position: absolute; top: 6px; left: 6px; z-index: 1;
-    width: 21px; height: 21px; border-radius: 50%;
-    border: 2px solid var(--edge); background: var(--orange); color: #fff;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .tile-dot svg { width: 9px; height: 9px; }
+  .tile-art .pill { position: absolute; top: 0.4rem; right: 0.4rem; z-index: 1; }
+  .tile-dot { position: absolute; top: 0.4rem; left: 0.4rem; z-index: 1; }
   /* the recordings open over the poster itself — a grid has no room to expand a
      row underneath without shoving every later tile around */
   .tile-vods {
-    position: absolute; inset: 0; z-index: 2; padding: 7px; gap: 6px;
+    position: absolute; inset: 0; z-index: 2; padding: 0.45rem; gap: 0.4rem;
     background: var(--surface); color: var(--text); text-shadow: none;
     font-size: 1rem; font-weight: 400;
     display: none; flex-direction: column; overflow: auto;
   }
   .tile.open .tile-vods { display: flex; }
-  .tile-vods .vod-link { padding: 6px 8px; font-size: 0.76rem; }
+  .tile-vods .vod-link { padding: 0.4rem 0.5rem; font-size: 0.76rem; }
   .tile-vods .no-vod { font-size: 0.78rem; }
   .tile-title {
     display: block; font-weight: 800; font-size: 0.9rem; line-height: 1.2; overflow-wrap: anywhere;
-    text-decoration: underline; text-decoration-thickness: 2px;
-    text-decoration-color: var(--underline); text-underline-offset: 3px;
+    text-decoration: underline; text-decoration-thickness: 0.13rem;
+    text-decoration-color: var(--underline); text-underline-offset: 0.2rem;
   }
   .tile-title:hover { color: var(--mid); text-decoration-color: var(--orange); }
 
-  .empty { text-align: center; padding: 26px 10px; color: var(--text-soft); font-weight: 700; }
+  .empty { text-align: center; padding: 1.6rem 0.6rem; color: var(--text-soft); font-weight: 700; }
   .snap {
-    margin-top: 14px; padding-top: 12px; border-top: 2px solid var(--line);
+    margin-top: 0.9rem; padding-top: 0.75rem; border-top: 0.13rem solid var(--line);
     font-size: 0.76rem; font-weight: 600; color: var(--text-soft); line-height: 1.45;
   }
   .snap a { font-weight: 800; text-decoration: underline; color: var(--orange); }
@@ -304,37 +311,39 @@
   /* a watermelon wedge, point up — the SVG carries the whole look, so the
      button itself is just a transparent hit area */
   #up {
-    position: fixed; right: 18px; bottom: 18px; z-index: 20;
-    width: 64px; height: 64px; padding: 0;
+    position: fixed; right: 1.15rem; bottom: 1.15rem; z-index: 20;
+    width: 4rem; height: 4rem; padding: 0;
     border: none; background: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    filter: drop-shadow(0 5px 0 rgba(0,0,0,0.5));
-    opacity: 0; transform: translateY(14px) scale(0.9); pointer-events: none;
+    filter: drop-shadow(0 0.3rem 0 rgba(0,0,0,0.5));
+    opacity: 0; transform: translateY(0.9rem) scale(0.9); pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s ease;
   }
   #up.show { opacity: 1; transform: none; pointer-events: auto; }
-  #up:hover { transform: translateY(-3px); }
-  #up:active { transform: translateY(3px); filter: drop-shadow(0 1px 0 rgba(0,0,0,0.5)); }
+  #up:hover { transform: translateY(-0.19rem); }
+  #up:active { transform: translateY(0.19rem); filter: drop-shadow(0 0.06rem 0 rgba(0,0,0,0.5)); }
   #up svg { width: 100%; height: 100%; display: block; }
 
   @media (max-width: 620px) {
-    .shell { padding-top: 58px; }
-    .card > .head { padding: 12px 14px 12px 148px; min-height: 56px; }
+    /* the row has far less width to spend here than on a desktop */
+    :root { --badge: 2.05rem; --dot: 1.8rem; }
+    .shell { padding-top: 3.6rem; }
+    .card > .head { padding: 0.75rem 0.9rem 0.75rem 9.25rem; min-height: 3.5rem; }
     /* the panda eats the left half of the header, so what is left for the title
        scales with the screen rather than sitting at one fixed size */
     h1 { font-size: clamp(0.85rem, 4.2vw, 1.22rem); }
-    .panda { width: 148px; top: -33px; left: -12px; }
-    .poster-slot { width: 70px; height: 105px; font-size: 1.7rem; }
-    .reveal-in { padding-left: 82px; }
-    .row-main { gap: 11px; }
+    .panda { width: 9.25rem; top: -2.06rem; left: -0.75rem; }
+    .poster-slot { width: 4.4rem; height: 6.6rem; font-size: 1.7rem; }
+    .reveal-in { padding-left: 5.3rem; }
+    .row-main { gap: 0.7rem; }
     /* the № is the sheet's own numbering — least useful thing to keep when the
        text column gets squeezed */
     .row-num { display: none; }
     .row-title { font-size: 0.98rem; }
-    .grid { grid-template-columns: repeat(auto-fill, minmax(102px, 1fr)); gap: 10px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(6.4rem, 1fr)); gap: 0.62rem; }
     .tile-art { font-size: 2rem; }
     .tile-title { font-size: 0.82rem; }
-    #up { right: 12px; bottom: 12px; width: 48px; height: 48px; }
+    #up { right: 0.75rem; bottom: 0.75rem; width: 3rem; height: 3rem; }
   }
 </style>
 </head>
@@ -518,7 +527,8 @@
       '<span class="row-text">' +
       '<a class="row-title" href="' + esc(d.kp) + '" target="_blank" rel="noopener noreferrer">' + esc(m.t) + "</a>" +
       '<span class="row-sub">' + d.sub + "</span></span>" +
-      '<span class="row-right"><span class="vod-dot' + (d.has ? "" : " off") + '">' + I.play + "</span>" +
+      '<span class="row-right">' +
+      (d.has ? '<span class="vod-dot">' + I.play + "</span>" : "") +
       '<span class="pill ' + rClass(m.r) + '">' + d.rate + "</span>" +
       '<span class="chev">' + I.chev + "</span></span></div>" +
       '<div class="reveal"><div class="reveal-in">' + d.vods + "</div></div></li>";
@@ -531,7 +541,7 @@
       '" data-open="' + m.n + '" title="' + esc(d.sub) + '" style="background:' + tint(m.t) + '">' +
       d.letter + posterImg(m) +
       '<span class="pill ' + rClass(m.r) + '">' + d.rate + "</span>" +
-      (d.has ? '<span class="tile-dot">' + I.play + "</span>" : "") +
+      (d.has ? '<span class="vod-dot tile-dot">' + I.play + "</span>" : "") +
       '<div class="tile-vods">' + d.vods + "</div></div>" +
       '<a class="tile-title" href="' + esc(d.kp) + '" target="_blank" rel="noopener noreferrer">' + esc(m.t) + "</a></li>";
   }
