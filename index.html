@@ -10,21 +10,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Nunito:wght@400;600;700;800;900&display=swap">
 <style>
-  /* One committed visual world: a dark bamboo wall with a cream sticker card on
-     it. Every colour is painted explicitly — there is no light/dark swap. */
+  /* A dark bamboo wall with a sticker card on it. The wall stays dark in both
+     themes — only the card flips, so the two modes are one palette swapped by
+     role, never a second set of rules. */
   :root {
     --ground: #0e0e10;
-    --ink: #3e1616;
-    --ink-soft: #6d4038;
-    --cream: #fbf3e6;
-
     --panel: #9a467e;
-    --orange: #e07a00;  --orange-lo: #faeed9;
-
-    --good: #2f7d3a; --good-lo: #d8f0d4;
-    --mid:  #a35c00; --mid-lo:  #fbe8c8;
-    --bad:  #b3271e; --bad-lo:  #fadcd8;
-    --grey: #6d6257; --grey-lo: #e8e0d2;
 
     --stroke: 3px;
     --drop: 0 6px 0 rgba(0,0,0,0.55);
@@ -34,6 +25,45 @@
     --r-card: 20px;
     --r-mid: 12px;
     --r-small: 9px;
+  }
+
+  /* The theme attribute lives on #app, not on the root: the artifact viewer
+     stamps its own data-theme on the root element, and this would fight it. */
+  #app {
+    --surface: #fbf3e6;    /* the card */
+    --surface-2: #fff;     /* inputs, chips, links sitting on the card */
+    --text: #3e1616;
+    --text-soft: #6d4038;
+    --edge: #3e1616;       /* every thick sticker outline */
+    --chip-on-bg: #3e1616; --chip-on-fg: #fbf3e6;
+    --line: var(--line);
+    --underline: var(--underline);
+    --dot-off: var(--dot-off);
+
+    --orange: #e07a00;  --orange-lo: #faeed9;
+    --good: #2f7d3a; --good-lo: #d8f0d4;
+    --mid:  #a35c00; --mid-lo:  #fbe8c8;
+    --bad:  #b3271e; --bad-lo:  #fadcd8;
+    --grey: #6d6257; --grey-lo: #e8e0d2;
+  }
+  #app[data-theme="dark"] {
+    --surface: #241d1c;
+    --surface-2: #322827;
+    --text: #f3e7d9;
+    --text-soft: #b6a091;
+    /* warmer and lighter than the card, so the outline still reads as an outline
+       against both the card and the near-black bamboo behind it */
+    --edge: #5b4741;
+    --chip-on-bg: #f3e7d9; --chip-on-fg: #241d1c;
+    --line: rgba(243,231,217,0.14);
+    --underline: rgba(243,231,217,0.26);
+    --dot-off: #4a3c39;
+
+    --orange: #f09a3c;  --orange-lo: #3a2c1c;
+    --good: #8fd39a; --good-lo: #24382a;
+    --mid:  #e9b96a; --mid-lo:  #3a2e1c;
+    --bad:  #f0918a; --bad-lo:  #3d2422;
+    --grey: #a3948a; --grey-lo: #322a28;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -47,7 +77,7 @@
     background-position: center top;
     background-attachment: fixed;
     background-repeat: no-repeat;
-    color: var(--cream);
+    color: #f3e7d9;
     font-family: Nunito, "Segoe UI", system-ui, -apple-system, sans-serif;
     font-size: 16px; line-height: 1.45;
     -webkit-font-smoothing: antialiased;
@@ -70,16 +100,16 @@
   /* ---------- one whole card: the panda lies on its top edge ---------- */
   .card {
     position: relative;
-    border: var(--stroke) solid var(--ink);
+    border: var(--stroke) solid var(--edge);
     border-radius: var(--r-card);
     corner-shape: superellipse(1.6);
-    background: var(--cream);
+    background: var(--surface);
     box-shadow: var(--drop);
-    color: var(--ink);
+    color: var(--text);
   }
   .card > .head {
     background: var(--panel);
-    border-bottom: var(--stroke) solid var(--ink);
+    border-bottom: var(--stroke) solid var(--edge);
     border-radius: calc(var(--r-card) - var(--stroke)) calc(var(--r-card) - var(--stroke)) 0 0;
     corner-shape: superellipse(1.6);
     padding: 16px 18px 16px 196px;
@@ -103,49 +133,62 @@
   h1 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 
   .search-wrap { position: relative; display: flex; align-items: center; color: var(--orange); }
-  .search-wrap > svg { position: absolute; left: 13px; width: 16px; height: 16px; color: var(--ink-soft); pointer-events: none; }
+  .search-wrap > svg { position: absolute; left: 13px; width: 16px; height: 16px; color: var(--text-soft); pointer-events: none; }
   .search-wrap input {
-    width: 100%; border: 2px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink);
+    width: 100%; border: 2px solid var(--edge); border-radius: 999px; background: var(--surface-2); color: var(--text);
     padding: 9px 40px 9px 36px; font-size: 0.95rem; font-family: inherit; font-weight: 600;
   }
-  .search-wrap input::placeholder { color: var(--ink-soft); font-weight: 600; }
+  .search-wrap input::placeholder { color: var(--text-soft); font-weight: 600; }
   .search-wrap input:focus { outline: none; box-shadow: inset 0 0 0 2px currentColor; }
   .search-clear {
-    position: absolute; right: 8px; border: none; background: var(--ink); color: var(--cream);
+    position: absolute; right: 8px; border: none; background: var(--chip-on-bg); color: var(--chip-on-fg);
     width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 0.78rem;
     display: flex; align-items: center; justify-content: center;
   }
   .chipbar { display: flex; align-items: center; gap: 6px; margin-top: 11px; flex-wrap: wrap; }
-  .chipbar .lbl { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .chipbar .lbl { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-soft); }
   .chip {
-    border: 2px solid var(--ink); border-radius: var(--r-small);
+    border: 2px solid var(--edge); border-radius: var(--r-small);
     corner-shape: superellipse(1.6);
-    background: #fff; color: var(--ink);
+    background: var(--surface-2); color: var(--text);
     padding: 4px 11px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
     display: inline-flex; align-items: center; gap: 4px;
   }
-  .chip.on { background: var(--ink); color: var(--cream); }
+  .chip.on { background: var(--chip-on-bg); color: var(--chip-on-fg); }
   .chip .arr { font-size: 0.7em; }
+
+  /* view + theme switches: pushed to the far end of the sort row, so on a narrow
+     screen they wrap onto their own line instead of squeezing the chips */
+  .tools { margin-left: auto; display: flex; gap: 6px; }
+  .tool {
+    width: 30px; height: 30px; padding: 0; cursor: pointer;
+    border: 2px solid var(--edge); border-radius: var(--r-small);
+    corner-shape: superellipse(1.6);
+    background: var(--surface-2); color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tool:hover { background: var(--orange-lo); }
+  .tool svg { width: 15px; height: 15px; }
 
   /* ---------- rows ---------- */
   .rows { list-style: none; margin: 16px 0 0; padding: 0; }
-  .row { border-top: 2px solid rgba(62,22,22,0.16); }
+  .row { border-top: 2px solid var(--line); }
   .row:first-child { border-top: none; }
   .row-main {
     width: 100%; display: flex; align-items: center; gap: 14px; padding: 13px 2px;
-    border: none; background: none; text-align: left; cursor: pointer; color: var(--ink); font-family: inherit;
+    border: none; background: none; text-align: left; cursor: pointer; color: var(--text); font-family: inherit;
   }
   .row-num {
     font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums;
     font-size: 0.75rem; font-weight: 700;
-    color: var(--ink-soft); min-width: 2.1em; flex: none; text-align: right;
+    color: var(--text-soft); min-width: 2.1em; flex: none; text-align: right;
   }
   /* Poster slot: the letter is painted underneath, and the cover art — when it
      loads — sits on top. Where external images are blocked (the artifact
      viewer's CSP) the image never appears and the letter simply stays. */
   .poster-slot {
     width: 96px; height: 144px; flex: none;
-    border: 2px solid var(--ink);
+    border: 2px solid var(--edge);
     border-radius: var(--r-mid); corner-shape: superellipse(1.6);
     position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
@@ -164,13 +207,13 @@
     display: inline; color: inherit;
     font-weight: 800; font-size: 1.05rem; line-height: 1.25; overflow-wrap: anywhere;
     text-decoration: underline; text-decoration-thickness: 2px;
-    text-decoration-color: rgba(62,22,22,0.22); text-underline-offset: 3px;
+    text-decoration-color: var(--underline); text-underline-offset: 3px;
   }
   .row-title:hover { color: var(--mid); text-decoration-color: var(--orange); }
-  .row-sub { display: block; font-size: 0.79rem; font-weight: 600; color: var(--ink-soft); margin-top: 4px; }
+  .row-sub { display: block; font-size: 0.79rem; font-weight: 600; color: var(--text-soft); margin-top: 4px; }
   .row-right { display: flex; align-items: center; gap: 7px; flex: none; }
   .pill {
-    border: 2px solid var(--ink); border-radius: 999px; padding: 2px 8px;
+    border: 2px solid var(--edge); border-radius: 999px; padding: 2px 8px;
     font-size: 0.79rem; font-weight: 800; font-family: "JetBrains Mono", monospace;
     flex: none; text-align: center; min-width: 45px;
   }
@@ -180,14 +223,14 @@
   .pill.none { background: var(--grey-lo); color: var(--grey); font-family: Nunito, sans-serif; font-size: 0.72rem; }
   .vod-dot {
     width: 23px; height: 23px; border-radius: 50%; flex: none;
-    border: 2px solid var(--ink); background: var(--orange); color: #fff;
+    border: 2px solid var(--edge); background: var(--orange); color: #fff;
     display: flex; align-items: center; justify-content: center;
   }
   .vod-dot svg { width: 10px; height: 10px; }
   /* NB: modifier is .off — .empty is the empty-result block, whose padding would
      stretch this dot into an oval. */
-  .vod-dot.off { background: #ded4c4; color: var(--ink-soft); }
-  .chev { color: var(--ink-soft); flex: none; display: flex; transition: transform 0.22s ease; }
+  .vod-dot.off { background: var(--dot-off); color: var(--text-soft); }
+  .chev { color: var(--text-soft); flex: none; display: flex; transition: transform 0.22s ease; }
   .chev svg { width: 15px; height: 15px; }
   .row.open .chev { transform: rotate(90deg); }
 
@@ -195,19 +238,65 @@
   .row.open .reveal { max-height: 340px; }
   .reveal-in { padding: 2px 2px 14px 126px; display: flex; flex-direction: column; gap: 7px; }
   .vod-link {
-    border: 2px solid var(--ink); border-radius: var(--r-mid); corner-shape: superellipse(1.6);
-    background: #fff; padding: 8px 11px;
-    display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.85rem; color: var(--ink);
+    border: 2px solid var(--edge); border-radius: var(--r-mid); corner-shape: superellipse(1.6);
+    background: var(--surface-2); padding: 8px 11px;
+    display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.85rem; color: var(--text);
   }
   .vod-link:hover { background: var(--orange-lo); }
   .vod-link svg { width: 13px; height: 13px; flex: none; color: var(--orange); }
   .vod-link .lab { flex: 1; min-width: 0; }
-  .no-vod { font-size: 0.85rem; font-weight: 700; color: var(--ink-soft); }
+  .no-vod { font-size: 0.85rem; font-weight: 700; color: var(--text-soft); }
 
-  .empty { text-align: center; padding: 26px 10px; color: var(--ink-soft); font-weight: 700; }
+  /* ---------- tiles ---------- */
+  .grid {
+    list-style: none; margin: 16px 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 14px;
+  }
+  .tile { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .tile-art {
+    position: relative; width: 100%; aspect-ratio: 2 / 3; cursor: pointer;
+    border: 2px solid var(--edge);
+    border-radius: var(--r-mid); corner-shape: superellipse(1.6);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 2.6rem; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,0.35);
+  }
+  .tile-art img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    opacity: 0; transition: opacity 0.18s ease;
+  }
+  .tile-art img.ok { opacity: 1; }
+  .tile-art .pill { position: absolute; top: 6px; right: 6px; z-index: 1; min-width: 0; padding: 1px 7px; font-size: 0.72rem; }
+  .tile-dot {
+    position: absolute; top: 6px; left: 6px; z-index: 1;
+    width: 21px; height: 21px; border-radius: 50%;
+    border: 2px solid var(--edge); background: var(--orange); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tile-dot svg { width: 9px; height: 9px; }
+  /* the recordings open over the poster itself — a grid has no room to expand a
+     row underneath without shoving every later tile around */
+  .tile-vods {
+    position: absolute; inset: 0; z-index: 2; padding: 7px; gap: 6px;
+    background: var(--surface); color: var(--text); text-shadow: none;
+    font-size: 1rem; font-weight: 400;
+    display: none; flex-direction: column; overflow: auto;
+  }
+  .tile.open .tile-vods { display: flex; }
+  .tile-vods .vod-link { padding: 6px 8px; font-size: 0.76rem; }
+  .tile-vods .no-vod { font-size: 0.78rem; }
+  .tile-title {
+    display: block; font-weight: 800; font-size: 0.9rem; line-height: 1.2; overflow-wrap: anywhere;
+    text-decoration: underline; text-decoration-thickness: 2px;
+    text-decoration-color: var(--underline); text-underline-offset: 3px;
+  }
+  .tile-title:hover { color: var(--mid); text-decoration-color: var(--orange); }
+
+  .empty { text-align: center; padding: 26px 10px; color: var(--text-soft); font-weight: 700; }
   .snap {
-    margin-top: 14px; padding-top: 12px; border-top: 2px solid rgba(62,22,22,0.16);
-    font-size: 0.76rem; font-weight: 600; color: var(--ink-soft); line-height: 1.45;
+    margin-top: 14px; padding-top: 12px; border-top: 2px solid var(--line);
+    font-size: 0.76rem; font-weight: 600; color: var(--text-soft); line-height: 1.45;
   }
   .snap a { font-weight: 800; text-decoration: underline; color: var(--orange); }
 
@@ -242,6 +331,9 @@
        text column gets squeezed */
     .row-num { display: none; }
     .row-title { font-size: 0.98rem; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(102px, 1fr)); gap: 10px; }
+    .tile-art { font-size: 2rem; }
+    .tile-title { font-size: 0.82rem; }
     #up { right: 12px; bottom: 12px; width: 48px; height: 48px; }
   }
 </style>
@@ -286,10 +378,32 @@
     search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     chev:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>',
     play:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
-    ext:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>'
+    ext:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+    sun:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v2.3M12 19.3v2.3M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.4 12h2.3M19.3 12h2.3M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>',
+    moon:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a8.5 8.5 0 1 0 11 11z"/></svg>',
+    grid:  '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>',
+    rows:  '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="5.4" height="5.4" rx="1.6"/><rect x="10.6" y="5.3" width="10.4" height="2.8" rx="1.4"/><rect x="3" y="14.6" width="5.4" height="5.4" rx="1.6"/><rect x="10.6" y="15.9" width="10.4" height="2.8" rx="1.4"/></svg>'
   };
 
-  var ui = { search: "", sort: "n", dir: 1, open: null };
+  // Two preferences survive a reload. Private windows and blocked site data make
+  // localStorage throw on access, not just come back empty, so every touch is
+  // wrapped and the page simply falls back to its defaults.
+  var store = {
+    get: function (k, d) {
+      try { var v = localStorage.getItem("rp." + k); return v === null ? d : v; }
+      catch (e) { return d; }
+    },
+    set: function (k, v) { try { localStorage.setItem("rp." + k, v); } catch (e) {} }
+  };
+  function prefersDark() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+
+  var ui = {
+    search: "", sort: "n", dir: 1, open: null,
+    theme: store.get("theme", prefersDark() ? "dark" : "light"),
+    view: store.get("view", "list")
+  };
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -330,56 +444,111 @@
   // if neither loads the <img> is dropped and the letter shows instead, so the
   // row is never broken — which is also what happens inside the artifact viewer,
   // where external images are blocked outright.
+  var KP_SMALL = "https://st.kp.yandex.net/images/film_iphone/iphone360_";
+  var KP_BIG = "https://st.kp.yandex.net/images/film_big/";
+  // Sorting and searching rebuild the list, and a brand-new <img> starts out
+  // transparent even when its bytes are already cached — which flashed the
+  // letter underneath every cover. Remembering the verdict per URL lets a known
+  // cover be written out already visible, and a known miss be skipped entirely.
+  var seen = {};
+
+  function coverTag(src, fallback, ready) {
+    return '<img alt="" loading="lazy" decoding="async"' + (ready ? ' class="ok"' : "") +
+      ' src="' + src + '"' + (fallback ? ' data-fb="' + fallback + '"' : "") + ">";
+  }
   function posterImg(m) {
     if (!m.k) return "";
-    return '<img alt="" loading="lazy" decoding="async"' +
-      ' src="https://st.kp.yandex.net/images/film_iphone/iphone360_' + m.k + '.jpg"' +
-      ' data-fb="https://st.kp.yandex.net/images/film_big/' + m.k + '.jpg">';
+    var small = KP_SMALL + m.k + ".jpg", big = KP_BIG + m.k + ".jpg";
+    if (seen[small] === "ok") return coverTag(small, "", true);
+    if (seen[small] !== "bad") return coverTag(small, big, false);
+    if (seen[big] === "ok") return coverTag(big, "", true);
+    return seen[big] === "bad" ? "" : coverTag(big, "", false);
   }
   function bindPosters() {
-    document.querySelectorAll(".poster-slot img").forEach(function (img) {
+    document.querySelectorAll(".poster-slot img, .tile-art img").forEach(function (img) {
+      function ok() {
+        // a served "not found" stub is tiny — treat it as a miss too
+        if (img.naturalWidth < 40 || img.naturalHeight < 40) { seen[img.src] = "bad"; img.remove(); return; }
+        seen[img.src] = "ok";
+        img.classList.add("ok");
+      }
       img.addEventListener("error", function () {
+        seen[img.src] = "bad";
         var fb = img.getAttribute("data-fb");
         if (fb) { img.removeAttribute("data-fb"); img.src = fb; }
         else { img.remove(); }
       });
-      img.addEventListener("load", function () {
-        // a served "not found" stub is tiny — treat it as a miss too
-        if (img.naturalWidth < 40 || img.naturalHeight < 40) { img.remove(); return; }
-        img.classList.add("ok");
-      });
+      img.addEventListener("load", ok);
+      if (img.complete && img.naturalWidth) ok();
     });
   }
 
-  function row(m) {
-    var open = ui.open === m.n;
+  // everything both layouts need out of one movie
+  function meta(m) {
     var has = m.v.length > 0;
-    var sub = has
-      ? (m.v.length === 1 ? "есть запись стрима"
-         : m.v.length + " " + plural(m.v.length, ["запись", "записи", "записей"]) + " стрима")
-      : "записи нет";
-    var inner = has
-      ? m.v.map(function (v) {
-          return '<a class="vod-link" href="' + esc(v.u) + '" target="_blank" rel="noopener noreferrer">' +
-            I.play + '<span class="lab">' + esc(v.l || "Смотреть запись стрима") + "</span>" + I.ext + "</a>";
-        }).join("")
-      : '<div class="no-vod">Записи этого стрима не сохранилось :(</div>';
-    var kp = m.k
-      ? "https://www.kinopoisk.ru/" + (m.kt === "s" ? "series" : "film") + "/" + m.k + "/"
-      : "https://www.kinopoisk.ru/index.php?kp_query=" + encodeURIComponent(m.t);
+    return {
+      open: ui.open === m.n,
+      has: has,
+      letter: esc(m.t.trim().charAt(0).toUpperCase()),
+      rate: m.r == null ? "б/о" : m.r,
+      sub: has
+        ? (m.v.length === 1 ? "есть запись стрима"
+           : m.v.length + " " + plural(m.v.length, ["запись", "записи", "записей"]) + " стрима")
+        : "записи нет",
+      vods: has
+        ? m.v.map(function (v) {
+            return '<a class="vod-link" href="' + esc(v.u) + '" target="_blank" rel="noopener noreferrer">' +
+              I.play + '<span class="lab">' + esc(v.l || "Смотреть запись стрима") + "</span>" + I.ext + "</a>";
+          }).join("")
+        : '<div class="no-vod">Записи этого стрима не сохранилось :(</div>',
+      kp: m.k
+        ? "https://www.kinopoisk.ru/" + (m.kt === "s" ? "series" : "film") + "/" + m.k + "/"
+        : "https://www.kinopoisk.ru/index.php?kp_query=" + encodeURIComponent(m.t)
+    };
+  }
+
+  function row(m) {
+    var d = meta(m);
     // div, not button: it holds the title's <a>, which a button cannot contain
-    return '<li class="row' + (open ? " open" : "") + '">' +
-      '<div class="row-main" role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '" data-open="' + m.n + '">' +
-      '<span class="row-num mono">' + m.n + "</span>" +
+    return '<li class="row' + (d.open ? " open" : "") + '">' +
+      '<div class="row-main" role="button" tabindex="0" aria-expanded="' + (d.open ? "true" : "false") + '" data-open="' + m.n + '">' +
+      '<span class="row-num">' + m.n + "</span>" +
       '<span class="poster-slot" style="background:' + tint(m.t) + '">' +
-      esc(m.t.trim().charAt(0).toUpperCase()) + posterImg(m) + "</span>" +
+      d.letter + posterImg(m) + "</span>" +
       '<span class="row-text">' +
-      '<a class="row-title" href="' + esc(kp) + '" target="_blank" rel="noopener noreferrer">' + esc(m.t) + "</a>" +
-      '<span class="row-sub">' + sub + "</span></span>" +
-      '<span class="row-right"><span class="vod-dot' + (has ? "" : " off") + '">' + I.play + "</span>" +
-      '<span class="pill ' + rClass(m.r) + '">' + (m.r == null ? "б/о" : m.r) + "</span>" +
+      '<a class="row-title" href="' + esc(d.kp) + '" target="_blank" rel="noopener noreferrer">' + esc(m.t) + "</a>" +
+      '<span class="row-sub">' + d.sub + "</span></span>" +
+      '<span class="row-right"><span class="vod-dot' + (d.has ? "" : " off") + '">' + I.play + "</span>" +
+      '<span class="pill ' + rClass(m.r) + '">' + d.rate + "</span>" +
       '<span class="chev">' + I.chev + "</span></span></div>" +
-      '<div class="reveal"><div class="reveal-in">' + inner + "</div></div></li>";
+      '<div class="reveal"><div class="reveal-in">' + d.vods + "</div></div></li>";
+  }
+
+  function tile(m) {
+    var d = meta(m);
+    return '<li class="tile' + (d.open ? " open" : "") + '">' +
+      '<div class="tile-art" role="button" tabindex="0" aria-expanded="' + (d.open ? "true" : "false") +
+      '" data-open="' + m.n + '" title="' + esc(d.sub) + '" style="background:' + tint(m.t) + '">' +
+      d.letter + posterImg(m) +
+      '<span class="pill ' + rClass(m.r) + '">' + d.rate + "</span>" +
+      (d.has ? '<span class="tile-dot">' + I.play + "</span>" : "") +
+      '<div class="tile-vods">' + d.vods + "</div></div>" +
+      '<a class="tile-title" href="' + esc(d.kp) + '" target="_blank" rel="noopener noreferrer">' + esc(m.t) + "</a></li>";
+  }
+
+  // Each switch shows where it will take you, not where you are.
+  function toolBtn(kind) {
+    var grid = ui.view === "grid";
+    var dark = ui.theme === "dark";
+    var b = kind === "view"
+      ? { icon: grid ? I.rows : I.grid, label: grid ? "Показать списком" : "Показать плиткой" }
+      : { icon: dark ? I.sun : I.moon, label: dark ? "Светлая тема" : "Тёмная тема" };
+    return '<button class="tool" id="t-' + kind + '" aria-label="' + b.label + '" title="' + b.label + '">' +
+      b.icon + "</button>";
+  }
+
+  function applyTheme() {
+    document.getElementById("app").setAttribute("data-theme", ui.theme);
   }
 
   function render() {
@@ -398,9 +567,12 @@
         var on = it.f === ui.sort;
         return '<button class="chip' + (on ? " on" : "") + '" data-sort="' + it.f + '">' + esc(it.label) +
           (on ? '<span class="arr">' + (ui.dir === 1 ? "▲" : "▼") + "</span>" : "") + "</button>";
-      }).join("") + "</div>" +
-      (l.length ? '<ul class="rows">' + l.map(row).join("") + "</ul>"
-                : '<div class="empty">Ничего не нашлось по запросу «' + esc(ui.search) + "»</div>") +
+      }).join("") +
+      '<span class="tools">' + toolBtn("view") + toolBtn("theme") + "</span></div>" +
+      (l.length
+        ? (ui.view === "grid" ? '<ul class="grid">' + l.map(tile).join("") + "</ul>"
+                              : '<ul class="rows">' + l.map(row).join("") + "</ul>")
+        : '<div class="empty">Ничего не нашлось по запросу «' + esc(ui.search) + "»</div>") +
       '<div class="snap">Собрано из таблицы — снимок от ' + esc(SHEET_SYNCED) +
       '. <a href="' + esc(SHEET_URL) + '" target="_blank" rel="noopener noreferrer">Открыть таблицу</a></div>' +
       "</div></div>";
@@ -414,14 +586,25 @@
     document.querySelectorAll(sel).forEach(function (el) { el.addEventListener("click", fn); });
   }
 
+  // Opening a row used to re-render the whole list, which threw away every <img>
+  // and made all the covers blink back to their letter. Nothing needs rebuilding
+  // here — only which element carries .open changes.
+  function setOpen(n) {
+    ui.open = ui.open === n ? null : n;
+    document.querySelectorAll("[data-open]").forEach(function (el) {
+      var mine = parseInt(el.getAttribute("data-open"), 10) === ui.open;
+      el.setAttribute("aria-expanded", mine ? "true" : "false");
+      var holder = el.closest(".row, .tile");
+      if (holder) holder.classList.toggle("open", mine);
+    });
+  }
+
   function attach() {
     on("[data-open]", function (e) {
-      var k = parseInt(e.currentTarget.getAttribute("data-open"), 10);
-      ui.open = ui.open === k ? null : k;
-      render();
+      setOpen(parseInt(e.currentTarget.getAttribute("data-open"), 10));
     });
-    // the title is a link inside a clickable row: let it navigate without toggling
-    on("a.row-title", function (e) { e.stopPropagation(); });
+    // links living inside a clickable row must navigate without toggling it
+    on("a.row-title, .tile-vods a", function (e) { e.stopPropagation(); });
     document.querySelectorAll('[data-open][role="button"]').forEach(function (el) {
       el.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); el.click(); }
@@ -443,6 +626,20 @@
     });
     var clr = document.getElementById("q-clear");
     if (clr) clr.addEventListener("click", function () { ui.search = ""; render(); });
+
+    on("#t-view", function () {
+      ui.view = ui.view === "grid" ? "list" : "grid";
+      store.set("view", ui.view);
+      render();
+    });
+    // only the palette and this button's own icon change, so the list stays put
+    on("#t-theme", function flip(e) {
+      ui.theme = ui.theme === "dark" ? "light" : "dark";
+      store.set("theme", ui.theme);
+      applyTheme();
+      e.currentTarget.outerHTML = toolBtn("theme");
+      on("#t-theme", flip);
+    });
   }
 
   function initUp() {
@@ -457,6 +654,7 @@
     sync();
   }
 
+  applyTheme();
   render();
   initUp();
 })();
