@@ -104,6 +104,9 @@
   :focus-visible { outline: 0.19rem solid #ffd166; outline-offset: 0.13rem; }
 
   .shell { max-width: 50rem; margin: 0 auto; padding: 4.6rem 1rem 5.6rem; position: relative; z-index: 1; }
+  /* The shelf needs room for six covers; a list of one-line titles stretched
+     that wide just opens a gulf between each title and its score. */
+  #app[data-view="grid"] { max-width: 74rem; }
 
   /* ---------- one whole card: the panda lies on its top edge ---------- */
   .card {
@@ -263,8 +266,15 @@
   /* ---------- tiles ---------- */
   .grid {
     list-style: none; margin: 1rem 0 0; padding: 0;
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(8.6rem, 1fr)); gap: 0.9rem;
+    /* The column count is stepped by hand rather than left to auto-fill, and it
+       stops at six: past that a wide monitor should be making the covers bigger,
+       not fitting more of them in. */
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.62rem;
   }
+  @media (min-width: 500px)  { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 760px)  { .grid { grid-template-columns: repeat(4, 1fr); gap: 0.9rem; } }
+  @media (min-width: 1060px) { .grid { grid-template-columns: repeat(5, 1fr); } }
+  @media (min-width: 1320px) { .grid { grid-template-columns: repeat(6, 1fr); } }
   .tile { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
   .tile-art {
     position: relative; width: 100%; aspect-ratio: 2 / 3; cursor: pointer;
@@ -340,7 +350,6 @@
        text column gets squeezed */
     .row-num { display: none; }
     .row-title { font-size: 0.98rem; }
-    .grid { grid-template-columns: repeat(auto-fill, minmax(6.4rem, 1fr)); gap: 0.62rem; }
     .tile-art { font-size: 2rem; }
     .tile-title { font-size: 0.82rem; }
     #up { right: 0.75rem; bottom: 0.75rem; width: 3rem; height: 3rem; }
@@ -562,6 +571,9 @@
   }
 
   function render() {
+    // set before the markup lands, so the card is never laid out at one width
+    // and repainted at the other
+    document.getElementById("app").setAttribute("data-view", ui.view);
     var l = list();
     var sorts = [{ f: "n", label: "По порядку" }, { f: "r", label: "Оценка" }, { f: "t", label: "Название" }];
 
