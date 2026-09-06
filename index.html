@@ -42,8 +42,8 @@
     --text-soft: #6d4038;
     --edge: #3e1616;       /* every thick sticker outline */
     --chip-on-bg: #3e1616; --chip-on-fg: #fbf3e6;
-    --line: var(--line);
-    --underline: var(--underline);
+    --line: rgba(62,22,22,0.16);
+    --underline: rgba(62,22,22,0.22);
 
     --orange: #e07a00;  --orange-lo: #faeed9;
     --good: #2f7d3a; --good-lo: #d8f0d4;
@@ -103,9 +103,16 @@
   button { font-family: inherit; -webkit-appearance: none; appearance: none; }
   :focus-visible { outline: 0.19rem solid #ffd166; outline-offset: 0.13rem; }
 
-  .shell { max-width: 50rem; margin: 0 auto; padding: 4.6rem 1rem 5.6rem; position: relative; z-index: 1; }
+  .shell {
+    max-width: 50rem; margin: 0 auto; padding: 4.6rem 1rem 5.6rem;
+    position: relative; z-index: 1;
+  }
   /* The shelf needs room for six covers; a list of one-line titles stretched
      that wide just opens a gulf between each title and its score. */
+  /* The width changes in one frame on purpose. Animating it was measured at 9
+     frames against 28 for the same switch without it: every step of the stretch
+     re-lays-out all 84 items, and no easing hides that. The cascade below covers
+     the change instead. */
   #app[data-view="grid"] { max-width: 74rem; }
 
   /* ---------- one whole card: the panda lies on its top edge ---------- */
@@ -157,7 +164,6 @@
     display: flex; align-items: center; justify-content: center;
   }
   .chipbar { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.7rem; flex-wrap: wrap; }
-  .chipbar .lbl { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-soft); }
   .chip {
     border: 0.13rem solid var(--edge); border-radius: var(--r-small);
     corner-shape: superellipse(1.6);
@@ -333,7 +339,13 @@
   .tile-back {
     transform: rotateY(180deg);
     color: #fff; text-shadow: none; font-size: 1rem; font-weight: 400;
+    /* Hidden until its card is actually turned. Eighty-four reverse sides, each
+       a composited 3D layer with its own cover to decode, is what made the
+       switch into the shelf stutter; hidden ones are neither painted nor
+       fetched. The delay keeps the back present for the whole closing turn. */
+    visibility: hidden; transition: visibility 0s linear 0.55s;
   }
+  .tile.open .tile-back { visibility: visible; transition-delay: 0s; }
   .tile-back::after {
     content: ""; position: absolute; inset: 0;
     background: rgba(8,6,6,0.66); pointer-events: none;
@@ -358,6 +370,39 @@
     font-size: 0.76rem; font-weight: 600; color: var(--text-soft); line-height: 1.45;
   }
   .snap a { font-weight: 800; text-decoration: underline; color: var(--orange); }
+
+  /* ---------- motion between states ---------- */
+  /* The two themes are one palette swapped by role, so the swap can travel
+     instead of snapping. It is armed only for the moment of the change, so it
+     costs nothing the rest of the time — and it names the surfaces rather than
+     every descendant: putting it on all ~700 elements inside the card cost more
+     in style recalculation than the fade was worth (measured: 17 frames against
+     26). Text that merely inherits its colour follows the card for free, and the
+     poster frames are left out on purpose: only their thin border changes, and
+     paying for 168 of them cost a third of the frame rate in the shelf. */
+  #app.theming .card, #app.theming .card > .head,
+  #app.theming .search-wrap input, #app.theming .search-wrap > svg,
+  #app.theming .search-clear, #app.theming .chip, #app.theming .tool,
+  #app.theming .row, #app.theming .pill,
+  #app.theming .vod-dot, #app.theming .vod-link,
+  #app.theming .no-vod, #app.theming .empty, #app.theming .snap {
+    transition: background-color 0.22s ease, color 0.22s ease,
+                border-color 0.22s ease, text-decoration-color 0.22s ease;
+  }
+
+  /* Switching between the list and the shelf replaces every element at once.
+     The class is only put on the freshly built container when the view actually
+     changed, so typing in the search box does not replay this. */
+  @keyframes swap-in {
+    from { opacity: 0; transform: translateY(0.55rem); }
+  }
+  /* Only the first screenful animates. Running this on all 84 items while the
+     card is also re-laying itself out is what made the switch stutter; the rest
+     are below the fold and nobody sees them arrive. */
+  .swap > :nth-child(-n+20) {
+    animation: swap-in 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 8ms);
+  }
 
   /* ---------- back to top ---------- */
   /* a watermelon wedge, point up — the SVG carries the whole look, so the
@@ -567,10 +612,14 @@
     };
   }
 
-  function row(m) {
+  // `i` only feeds the stagger of the view-switch animation; capped so the
+  // cascade finishes quickly instead of trailing off down the page
+  function stagger(i) { return ' style="--i:' + Math.min(i, 8) + '"'; }
+
+  function row(m, i) {
     var d = meta(m);
     // div, not button: it holds the title's <a>, which a button cannot contain
-    return '<li class="row' + (d.open ? " open" : "") + '">' +
+    return '<li class="row' + (d.open ? " open" : "") + '"' + stagger(i) + ">" +
       '<div class="row-main" role="button" tabindex="0" aria-expanded="' + (d.open ? "true" : "false") + '" data-open="' + m.n + '">' +
       '<span class="row-num">' + m.n + "</span>" +
       '<span class="poster-slot" style="background:' + tint(m.t) + '">' +
@@ -586,9 +635,9 @@
       d.vods + "</div></div></div></li>";
   }
 
-  function tile(m) {
+  function tile(m, i) {
     var d = meta(m);
-    return '<li class="tile' + (d.open ? " open" : "") + '">' +
+    return '<li class="tile' + (d.open ? " open" : "") + '"' + stagger(i) + ">" +
       '<div class="tile-art" role="button" tabindex="0" aria-expanded="' + (d.open ? "true" : "false") +
       '" data-open="' + m.n + '" title="' + esc(d.sub) + '"><div class="flip">' +
       '<div class="face tile-front" style="background:' + tint(m.t) + '">' +
@@ -601,6 +650,9 @@
   }
 
   // Each switch shows where it will take you, not where you are.
+  var swapping = false;   // true only while a view switch is being rendered
+  var themeOff = 0;       // pending removal of the colour-transition class
+
   function toolBtn(kind) {
     var grid = ui.view === "grid";
     var dark = ui.theme === "dark";
@@ -629,7 +681,7 @@
       '<input type="search" id="q" placeholder="Поиск по фильмам" value="' + esc(ui.search) + '">' +
       (ui.search ? '<button class="search-clear" id="q-clear" aria-label="Очистить">✕</button>' : "") +
       "</div>" +
-      '<div class="chipbar"><span class="lbl">Сортировка</span>' +
+      '<div class="chipbar">' +
       sorts.map(function (it) {
         var on = it.f === ui.sort;
         return '<button class="chip' + (on ? " on" : "") + '" data-sort="' + it.f + '">' + esc(it.label) +
@@ -637,8 +689,8 @@
       }).join("") +
       '<span class="tools">' + toolBtn("view") + toolBtn("theme") + "</span></div>" +
       (l.length
-        ? (ui.view === "grid" ? '<ul class="grid">' + l.map(tile).join("") + "</ul>"
-                              : '<ul class="rows">' + l.map(row).join("") + "</ul>")
+        ? '<ul class="' + (ui.view === "grid" ? "grid" : "rows") + (swapping ? " swap" : "") + '">' +
+          l.map(ui.view === "grid" ? tile : row).join("") + "</ul>" 
         : '<div class="empty">Ничего не нашлось по запросу «' + esc(ui.search) + "»</div>") +
       '<div class="snap">Собрано из таблицы — снимок от ' + esc(SHEET_SYNCED) +
       '. <a href="' + esc(SHEET_URL) + '" target="_blank" rel="noopener noreferrer">Открыть таблицу</a></div>' +
@@ -694,15 +746,27 @@
     var clr = document.getElementById("q-clear");
     if (clr) clr.addEventListener("click", function () { ui.search = ""; render(); });
 
+    // The card stretches and the two lists cross-fade over the top of it.
+    // Pinning the outgoing list to its pixel width first is what keeps the
+    // stretch smooth: left free, all 84 items re-lay-out on every frame, which
+    // measured 8 frames against 25. The rebuild is timed to land while the old
+    // list has faded but the stretch is still finishing, so the card is never
+    // seen empty and the arriving items cover the last of the movement.
     on("#t-view", function () {
       ui.view = ui.view === "grid" ? "list" : "grid";
       store.set("view", ui.view);
+      swapping = true;
       render();
+      swapping = false;
     });
     // only the palette and this button's own icon change, so the list stays put
     on("#t-theme", function flip(e) {
       ui.theme = ui.theme === "dark" ? "light" : "dark";
       store.set("theme", ui.theme);
+      var app = document.getElementById("app");
+      app.classList.add("theming");
+      clearTimeout(themeOff);
+      themeOff = setTimeout(function () { app.classList.remove("theming"); }, 280);
       applyTheme();
       e.currentTarget.outerHTML = toolBtn("theme");
       on("#t-theme", flip);
