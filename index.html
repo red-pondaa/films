@@ -246,13 +246,29 @@
     display: flex; align-items: center; justify-content: center;
   }
   .vod-dot svg { width: 0.72rem; height: 0.72rem; }
-  .chev { color: var(--text-soft); flex: none; display: flex; transition: transform 0.22s ease; }
+  .chev { color: var(--text-soft); flex: none; display: flex; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .chev svg { width: 1rem; height: 1rem; }
   .row.open .chev { transform: rotate(90deg); }
 
-  .reveal { overflow: hidden; max-height: 0; transition: max-height 0.26s ease; }
-  .row.open .reveal { max-height: 24rem; }
-  .reveal-in { padding: 0.13rem 0.13rem 0.9rem 7.9rem; display: flex; flex-direction: column; gap: 0.45rem; }
+  /* Animating max-height meant guessing a ceiling and racing to it: a row with
+     one link shot open and then sat still for the rest of the transition, and on
+     the way back nothing moved until the ceiling came down to meet the content.
+     A grid row from 0fr to 1fr travels the content's real height instead, so
+     every row takes the same time regardless of how much is inside. */
+  .reveal {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .row.open .reveal { grid-template-rows: 1fr; }
+  /* the clipper carries no padding of its own: padding sits outside the content
+     box that overflow hides, so a padded grid item never collapses to nothing */
+  .reveal-clip { overflow: hidden; min-height: 0; }
+  .reveal-in {
+    padding: 0.13rem 0.13rem 0.9rem 7.9rem;
+    display: flex; flex-direction: column; gap: 0.45rem;
+    opacity: 0; transition: opacity 0.22s ease;
+  }
+  .row.open .reveal-in { opacity: 1; }
   .vod-link {
     border: 0.13rem solid var(--edge); border-radius: var(--r-mid); corner-shape: superellipse(1.6);
     background: var(--surface-2); padding: 0.5rem 0.7rem;
@@ -275,36 +291,60 @@
   @media (min-width: 760px)  { .grid { grid-template-columns: repeat(4, 1fr); gap: 0.9rem; } }
   @media (min-width: 1060px) { .grid { grid-template-columns: repeat(5, 1fr); } }
   @media (min-width: 1320px) { .grid { grid-template-columns: repeat(6, 1fr); } }
-  .tile { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+  /* a turning card leans out of its cell — it has to paint above its neighbours */
+  .tile { position: relative; display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+  .tile.open { z-index: 2; }
+  /* The tile is a card with two sides that turns as one object, frame included.
+     .tile-art only holds the 3D space and must NOT clip: an overflow here would
+     shave off the corners of the card exactly while they swing out of the flat
+     plane, which read as the cover vanishing mid-turn. Each face carries its own
+     border and rounding instead, so the frame travels with the card. */
   .tile-art {
     position: relative; width: 100%; aspect-ratio: 2 / 3; cursor: pointer;
+    perspective: 62rem;
+  }
+  .flip {
+    position: absolute; inset: 0; transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .tile.open .flip { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0; overflow: hidden;
     border: 0.13rem solid var(--edge);
     border-radius: var(--r-mid); corner-shape: superellipse(1.6);
-    overflow: hidden;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  }
+  .tile-front {
     display: flex; align-items: center; justify-content: center;
     font-weight: 900; font-size: 2.6rem; color: #fff; text-shadow: 0 0.13rem 0 rgba(0,0,0,0.35);
   }
-  .tile-art img {
+  .face img {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover; display: block;
     opacity: 0; transition: opacity 0.18s ease;
   }
-  .tile-art img.ok { opacity: 1; }
+  .face img.ok { opacity: 1; }
   /* text-shadow: the drop shadow belongs to the big letter behind the cover, but
      it inherits into the badge and smears its digits, so it is cancelled here */
-  .tile-art .pill { position: absolute; top: 0.4rem; right: 0.4rem; z-index: 1; text-shadow: none; }
+  .tile-front .pill { position: absolute; top: 0.4rem; right: 0.4rem; z-index: 1; text-shadow: none; }
   .tile-dot { position: absolute; top: 0.4rem; left: 0.4rem; z-index: 1; }
-  /* the recordings open over the poster itself — a grid has no room to expand a
-     row underneath without shoving every later tile around */
-  .tile-vods {
-    position: absolute; inset: 0; z-index: 2; padding: 0.45rem; gap: 0.4rem;
-    background: var(--surface); color: var(--text); text-shadow: none;
-    font-size: 1rem; font-weight: 400;
-    display: none; flex-direction: column; overflow: auto;
+  /* The reverse keeps the same cover, darkened, so the card never turns into a
+     blank slab — and the recordings scroll over it when there are several. */
+  .tile-back {
+    transform: rotateY(180deg);
+    color: #fff; text-shadow: none; font-size: 1rem; font-weight: 400;
   }
-  .tile.open .tile-vods { display: flex; }
+  .tile-back::after {
+    content: ""; position: absolute; inset: 0;
+    background: rgba(8,6,6,0.66); pointer-events: none;
+  }
+  .tile-vods {
+    position: absolute; inset: 0; z-index: 1; overflow: auto;
+    padding: 0.45rem; gap: 0.4rem;
+    display: flex; flex-direction: column;
+  }
   .tile-vods .vod-link { padding: 0.4rem 0.5rem; font-size: 0.76rem; }
-  .tile-vods .no-vod { font-size: 0.78rem; }
+  .tile-vods .no-vod { font-size: 0.78rem; color: #efe4d7; }
   .tile-title {
     display: block; font-weight: 800; font-size: 0.9rem; line-height: 1.2; overflow-wrap: anywhere;
     text-decoration: underline; text-decoration-thickness: 0.13rem;
@@ -352,7 +392,7 @@
        text column gets squeezed */
     .row-num { display: none; }
     .row-title { font-size: 0.98rem; }
-    .tile-art { font-size: 2rem; }
+    .tile-front { font-size: 2rem; }
     .tile-title { font-size: 0.82rem; }
     #up { right: 0.75rem; bottom: 0.75rem; width: 3rem; height: 3rem; }
   }
@@ -389,10 +429,10 @@
 
   // n=№, t=название, r=оценка (null = без оценки), v=записи стрима [{u,l}],
   // k=ID Кинопоиска, kt="s" у сериалов.
-  var MOVIES = [{"n":1,"t":"Локи","r":10,"v":[],"k":1203039,"kt":"s"},{"n":2,"t":"Лунный рыцарь","r":5,"v":[],"k":1320559,"kt":"s"},{"n":3,"t":"Ванда/Вижн","r":7,"v":[],"k":1203040,"kt":"s"},{"n":4,"t":"Мстители: Финал","r":10,"v":[],"k":843650},{"n":5,"t":"Мстители: Война бесконечности","r":9,"v":[],"k":843649},{"n":6,"t":"Дедпул","r":9,"v":[],"k":462360},{"n":7,"t":"Доктор Стрендж","r":8,"v":[],"k":409600},{"n":8,"t":"Первый мститель: Другая война","r":9,"v":[],"k":676266},{"n":9,"t":"Стражи Галактики: Праздничный спецвыпуск","r":6,"v":[],"k":4295653},{"n":10,"t":"Стражи Галактики. Часть 3","r":8,"v":[],"k":1044280},{"n":11,"t":"Доктор Стрендж: В мультивселенной безумия","r":4,"v":[],"k":1219909},{"n":12,"t":"Таксист","r":9,"v":[],"k":1008113},{"n":13,"t":"Каратель","r":8,"v":[],"k":978853,"kt":"s"},{"n":14,"t":"Игра","r":8,"v":[],"k":12198},{"n":15,"t":"Ван Хельсинг","r":8,"v":[],"k":3491},{"n":16,"t":"Железное сердце","r":1,"v":[],"k":4295935,"kt":"s"},{"n":17,"t":"Клиника","r":10,"v":[],"k":251568,"kt":"s"},{"n":18,"t":"Хранители","r":7,"v":[],"k":252641},{"n":19,"t":"Чёрная Вдова","r":6,"v":[],"k":823956},{"n":20,"t":"Гаттака","r":10,"v":[],"k":5012},{"n":21,"t":"Блэйд","r":10,"v":[],"k":4554},{"n":22,"t":"На Дерибасовской хорошая погода, или На Брайтон-Бич опять идят дожди","r":7,"v":[],"k":41531},{"n":23,"t":"Смерть ей к лицу","r":9,"v":[],"k":1889},{"n":24,"t":"Атлантида: Затерянный мир","r":8,"v":[],"k":597},{"n":25,"t":"Хроники Риддика","r":6,"v":[],"k":5900},{"n":26,"t":"Синдбад: Легенда семи морей","r":8,"v":[],"k":7971},{"n":27,"t":"Луна 2112","r":6,"v":[],"k":406671},{"n":28,"t":"Зависнуть в Палм-Спрингс","r":8,"v":[],"k":1245524},{"n":29,"t":"Риддик","r":6,"v":[{"u":"https://clck.ru/3Th7ZX"}],"k":455767},{"n":30,"t":"Престиж","r":10,"v":[{"u":"https://clck.ru/3Th7a5"}],"k":195334},{"n":31,"t":"Крик","r":7,"v":[{"u":"https://clck.ru/3Th7aH"}],"k":1807},{"n":32,"t":"Очень страшное кино","r":10,"v":[{"u":"https://clck.ru/3Th7ac"}],"k":5932},{"n":33,"t":"Смерть единорога","r":6,"v":[{"u":"https://clck.ru/3Th7ak"}],"k":5445197},{"n":34,"t":"Винни-Пух: Кровь и мёд","r":1,"v":[{"u":"https://clck.ru/3Th7bJ"}],"k":4919766},{"n":35,"t":"Танцор диско","r":5,"v":[{"u":"https://clck.ru/3Th7bZ"}],"k":41740},{"n":36,"t":"Властелин колец: Братство кольца","r":10,"v":[{"u":"https://clck.ru/3Th7bv"}],"k":328},{"n":37,"t":"Властелин колец: Две крепости","r":10,"v":[{"u":"https://clck.ru/3Th7cD"}],"k":312},{"n":38,"t":"Властелин колец: Возвращение короля","r":10,"v":[{"u":"https://clck.ru/3Th7oT"}],"k":3498},{"n":39,"t":"Хоббит: Нежданное путешествие","r":8,"v":[{"u":"https://clck.ru/3Th7of"}],"k":278522},{"n":40,"t":"Хоббит: Пустошь Смауга","r":8,"v":[{"u":"https://clck.ru/3Th7oy"}],"k":408876},{"n":41,"t":"Хоббит: Битва пяти воинств","r":8,"v":[{"u":"https://clck.ru/3Th7pB"}],"k":694633},{"n":42,"t":"Очень страшное кино 2","r":9,"v":[{"u":"https://clck.ru/3Th7pN"}],"k":5931},{"n":43,"t":"Винни-Пух: Кровь и мёд 2","r":1,"v":[{"u":"https://clck.ru/3Th7pc"}],"k":5233426},{"n":44,"t":"Гарри Поттер и философский камень","r":10,"v":[{"u":"https://clck.ru/3Th7pj"}],"k":689},{"n":45,"t":"Гарри Поттер и Тайная комната","r":10,"v":[{"u":"https://clck.ru/3Th7px"}],"k":688},{"n":46,"t":"Гарри Поттер и узник Азкабана","r":10,"v":[{"u":"https://clck.ru/3Th7qS"}],"k":322},{"n":47,"t":"Гарри Поттер и Кубок огня","r":10,"v":[{"u":"https://clck.ru/3Th7qk"}],"k":8408},{"n":48,"t":"Гарри Поттер и Орден Феникса","r":10,"v":[{"u":"https://clck.ru/3Th7rL","l":"Первая часть стрима"},{"u":"https://clck.ru/3Th7rd","l":"Вторая часть стрима"},{"u":"https://clck.ru/3Th7rs","l":"Третья часть стрима и начало Принца-полукровки"}],"k":48356},{"n":49,"t":"Гарри Поттер и Принц-полукровка","r":10,"v":[{"u":"https://clck.ru/3Th7uM","l":"Продолжение Принца-полукровки"},{"u":"https://clck.ru/3Th7wU","l":"Продолжение Принца-полукровки 2"}],"k":89515},{"n":50,"t":"Гарри Поттер и Дары Смерти: Часть 1","r":10,"v":[{"u":"https://clck.ru/3Th7yc","l":"Первая часть стрима"}],"k":276762},{"n":51,"t":"Гарри Поттер и Дары Смерти: Часть 2","r":10,"v":[{"u":"https://clck.ru/3Th7zY","l":"Продолжение Даров смерти часть 1 и часть 2"}],"k":407636},{"n":52,"t":"Фантастические твари и где они обитают","r":8,"v":[{"u":"https://clck.ru/3Th85n"}],"k":797840},{"n":53,"t":"Матрица","r":10,"v":[{"u":"https://clck.ru/3Th876","l":"Первая часть стрима"},{"u":"https://clck.ru/3Th87k","l":"Вторая часть стрима"}],"k":301},{"n":54,"t":"Телефонная будка","r":7,"v":[{"u":"https://clck.ru/3Th88E"}],"k":305},{"n":55,"t":"Очень страшное кино 3","r":9,"v":[{"u":"https://clck.ru/3Th89z"}],"k":5002},{"n":56,"t":"Убийство в Восточном экспрессе","r":9,"v":[{"u":"https://clck.ru/3Th8AV"}],"k":817969},{"n":57,"t":"Пираты Карибского моря: Проклятие Черной жемчужины","r":10,"v":[{"u":"https://clck.ru/3Th8Ax"}],"k":4374},{"n":58,"t":"Очень страшное кино 4","r":7,"v":[{"u":"https://clck.ru/3Th8BM"}],"k":32655},{"n":59,"t":"Заряженное оружие 1","r":8,"v":[{"u":"https://clck.ru/3Th8EJ"}],"k":5188},{"n":60,"t":"Бумер","r":7,"v":[{"u":"https://clck.ru/3Th8Fq","l":"На ВК сохранилось только 57 минут фильма"}],"k":57166},{"n":61,"t":"Реквием по мечте","r":10,"v":[{"u":"https://clck.ru/3Th8Ge"}],"k":367},{"n":62,"t":"Детройт, город металла","r":10,"v":[],"k":438979,"kt":"s"},{"n":63,"t":"Одержимость","r":6,"v":[{"u":"https://clck.ru/3Th8HB"}],"k":725190},{"n":64,"t":"Липучка","r":10,"v":[{"u":"https://clck.ru/3Th8JF"}],"k":484470},{"n":65,"t":"Кто там","r":1,"v":[{"u":"https://clck.ru/3Th8Jr"}],"k":838926},{"n":66,"t":"Круэлла","r":8,"v":[{"u":"https://clck.ru/3Th8KA"}],"k":804662},{"n":67,"t":"Разборка в Бронксе","r":10,"v":[{"u":"https://clck.ru/3Th8Ks"}],"k":24693},{"n":68,"t":"Дорога на Эльдорадо","r":10,"v":[{"u":"https://clck.ru/3Th8LJ"}],"k":806},{"n":69,"t":"Губка Боб - квадратные штаны","r":10,"v":[{"u":"https://clck.ru/3Th8Lj"}],"k":35526},{"n":70,"t":"Удачи, веселья, не сдохни","r":6,"v":[{"u":"https://clck.ru/3Th8Me"}],"k":463492},{"n":71,"t":"Супергеройское кино","r":7,"v":[{"u":"https://clck.ru/3Th8N2"}],"k":195941},{"n":72,"t":"Убойный футбол","r":10,"v":[{"u":"https://clck.ru/3Th8NP"}],"k":833},{"n":73,"t":"Пираты Карибского моря: Сундук мертвеца","r":9,"v":[{"u":"https://clck.ru/3Th8Nt"}],"k":63991},{"n":74,"t":"Адвокат дьявола","r":9,"v":[{"u":"https://clck.ru/3UG3qW"}],"k":3797},{"n":75,"t":"Субстанция","r":5,"v":[],"k":4860213},{"n":76,"t":"Разборки в стиле кунг-фу","r":9,"v":[{"u":"https://clck.ru/3UqPjJ"}],"k":61370},{"n":77,"t":"Старикам тут не место","r":null,"v":[{"u":"https://clck.ru/3UwtWH"}],"k":195434},{"n":78,"t":"Трансформеры","r":9,"v":[{"u":"https://clck.ru/3UxVom","l":"Начало на VK"},{"u":"https://clck.ru/3UxVom","l":"Продолжение на WTV"}],"k":81288},{"n":79,"t":"Автостопом по галактике","r":5,"v":[{"u":"https://clck.ru/3V9qXr","l":"Первая часть стрима"},{"u":"https://clck.ru/3V9qYh","l":"Вторая часть стрима"}],"k":79834},{"n":80,"t":"Тихоокеанский рубеж","r":8,"v":[{"u":"https://clck.ru/3VALuD","l":"Первая часть стрима"},{"u":"https://clck.ru/3VALuw","l":"Вторая часть стрима"}],"k":546915},{"n":81,"t":"Трансформеры: Месть падших","r":7,"v":[{"u":"https://clck.ru/3VMWpP"}],"k":373391},{"n":82,"t":"Трансформеры 3: Тёмная сторона Луны","r":8,"v":[{"u":"https://clck.ru/3VNaYo"}],"k":452899},{"n":83,"t":"Стальной гигант","r":9,"v":[{"u":"https://w.tv/red_pondaa/videos/01a07269-178a-7789-9478-410e2f343c83"}],"k":538}];
+  var MOVIES = [{"n":1,"t":"Локи","r":10,"v":[],"k":1203039,"kt":"s"},{"n":2,"t":"Лунный рыцарь","r":5,"v":[],"k":1320559,"kt":"s"},{"n":3,"t":"Ванда/Вижн","r":7,"v":[],"k":1203040,"kt":"s"},{"n":4,"t":"Мстители: Финал","r":10,"v":[],"k":843650},{"n":5,"t":"Мстители: Война бесконечности","r":9,"v":[],"k":843649},{"n":6,"t":"Дедпул","r":9,"v":[],"k":462360},{"n":7,"t":"Доктор Стрендж","r":8,"v":[],"k":409600},{"n":8,"t":"Первый мститель: Другая война","r":9,"v":[],"k":676266},{"n":9,"t":"Стражи Галактики: Праздничный спецвыпуск","r":6,"v":[],"k":4295653},{"n":10,"t":"Стражи Галактики. Часть 3","r":8,"v":[],"k":1044280},{"n":11,"t":"Доктор Стрендж: В мультивселенной безумия","r":4,"v":[],"k":1219909},{"n":12,"t":"Таксист","r":9,"v":[],"k":1008113},{"n":13,"t":"Каратель","r":8,"v":[],"k":978853,"kt":"s"},{"n":14,"t":"Игра","r":8,"v":[],"k":12198},{"n":15,"t":"Ван Хельсинг","r":8,"v":[],"k":3491},{"n":16,"t":"Железное сердце","r":1,"v":[],"k":4295935,"kt":"s"},{"n":17,"t":"Клиника","r":10,"v":[],"k":251568,"kt":"s"},{"n":18,"t":"Хранители","r":7,"v":[],"k":252641},{"n":19,"t":"Чёрная Вдова","r":6,"v":[],"k":823956},{"n":20,"t":"Гаттака","r":10,"v":[],"k":5012},{"n":21,"t":"Блэйд","r":10,"v":[],"k":4554},{"n":22,"t":"На Дерибасовской хорошая погода, или На Брайтон-Бич опять идут дожди","r":7,"v":[],"k":41531},{"n":23,"t":"Смерть ей к лицу","r":9,"v":[],"k":1889},{"n":24,"t":"Атлантида: Затерянный мир","r":8,"v":[],"k":597},{"n":25,"t":"Хроники Риддика","r":6,"v":[],"k":5900},{"n":26,"t":"Синдбад: Легенда семи морей","r":8,"v":[],"k":7971},{"n":27,"t":"Луна 2112","r":6,"v":[],"k":406671},{"n":28,"t":"Зависнуть в Палм-Спрингс","r":8,"v":[],"k":1245524},{"n":29,"t":"Риддик","r":6,"v":[{"u":"https://clck.ru/3Th7ZX"}],"k":455767},{"n":30,"t":"Престиж","r":10,"v":[{"u":"https://clck.ru/3Th7a5"}],"k":195334},{"n":31,"t":"Крик","r":7,"v":[{"u":"https://clck.ru/3Th7aH"}],"k":1807},{"n":32,"t":"Очень страшное кино","r":10,"v":[{"u":"https://clck.ru/3Th7ac"}],"k":5932},{"n":33,"t":"Смерть единорога","r":6,"v":[{"u":"https://clck.ru/3Th7ak"}],"k":5445197},{"n":34,"t":"Винни-Пух: Кровь и мёд","r":1,"v":[{"u":"https://clck.ru/3Th7bJ"}],"k":4919766},{"n":35,"t":"Танцор диско","r":5,"v":[{"u":"https://clck.ru/3Th7bZ"}],"k":41740},{"n":36,"t":"Властелин колец: Братство кольца","r":10,"v":[{"u":"https://clck.ru/3Th7bv"}],"k":328},{"n":37,"t":"Властелин колец: Две крепости","r":10,"v":[{"u":"https://clck.ru/3Th7cD"}],"k":312},{"n":38,"t":"Властелин колец: Возвращение короля","r":10,"v":[{"u":"https://clck.ru/3Th7oT"}],"k":3498},{"n":39,"t":"Хоббит: Нежданное путешествие","r":8,"v":[{"u":"https://clck.ru/3Th7of"}],"k":278522},{"n":40,"t":"Хоббит: Пустошь Смауга","r":8,"v":[{"u":"https://clck.ru/3Th7oy"}],"k":408876},{"n":41,"t":"Хоббит: Битва пяти воинств","r":8,"v":[{"u":"https://clck.ru/3Th7pB"}],"k":694633},{"n":42,"t":"Очень страшное кино 2","r":9,"v":[{"u":"https://clck.ru/3Th7pN"}],"k":5931},{"n":43,"t":"Винни-Пух: Кровь и мёд 2","r":1,"v":[{"u":"https://clck.ru/3Th7pc"}],"k":5233426},{"n":44,"t":"Гарри Поттер и философский камень","r":10,"v":[{"u":"https://clck.ru/3Th7pj"}],"k":689},{"n":45,"t":"Гарри Поттер и Тайная комната","r":10,"v":[{"u":"https://clck.ru/3Th7px"}],"k":688},{"n":46,"t":"Гарри Поттер и узник Азкабана","r":10,"v":[{"u":"https://clck.ru/3Th7qS"}],"k":322},{"n":47,"t":"Гарри Поттер и Кубок огня","r":10,"v":[{"u":"https://clck.ru/3Th7qk"}],"k":8408},{"n":48,"t":"Гарри Поттер и Орден Феникса","r":10,"v":[{"u":"https://clck.ru/3Th7rL","l":"Первая часть стрима"},{"u":"https://clck.ru/3Th7rd","l":"Вторая часть стрима"},{"u":"https://clck.ru/3Th7rs","l":"Третья часть стрима и начало Принца-полукровки"}],"k":48356},{"n":49,"t":"Гарри Поттер и Принц-полукровка","r":10,"v":[{"u":"https://clck.ru/3Th7uM","l":"Продолжение Принца-полукровки"},{"u":"https://clck.ru/3Th7wU","l":"Продолжение Принца-полукровки 2"}],"k":89515},{"n":50,"t":"Гарри Поттер и Дары Смерти: Часть 1","r":10,"v":[{"u":"https://clck.ru/3Th7yc","l":"Первая часть стрима"}],"k":276762},{"n":51,"t":"Гарри Поттер и Дары Смерти: Часть 2","r":10,"v":[{"u":"https://clck.ru/3Th7zY","l":"Продолжение Даров смерти часть 1 и часть 2"}],"k":407636},{"n":52,"t":"Фантастические твари и где они обитают","r":8,"v":[{"u":"https://clck.ru/3Th85n"}],"k":797840},{"n":53,"t":"Матрица","r":10,"v":[{"u":"https://clck.ru/3Th876","l":"Первая часть стрима"},{"u":"https://clck.ru/3Th87k","l":"Вторая часть стрима"}],"k":301},{"n":54,"t":"Телефонная будка","r":7,"v":[{"u":"https://clck.ru/3Th88E"}],"k":305},{"n":55,"t":"Очень страшное кино 3","r":9,"v":[{"u":"https://clck.ru/3Th89z"}],"k":5002},{"n":56,"t":"Убийство в Восточном экспрессе","r":9,"v":[{"u":"https://clck.ru/3Th8AV"}],"k":817969},{"n":57,"t":"Пираты Карибского моря: Проклятие Черной жемчужины","r":10,"v":[{"u":"https://clck.ru/3Th8Ax"}],"k":4374},{"n":58,"t":"Очень страшное кино 4","r":7,"v":[{"u":"https://clck.ru/3Th8BM"}],"k":32655},{"n":59,"t":"Заряженное оружие 1","r":8,"v":[{"u":"https://clck.ru/3Th8EJ"}],"k":5188},{"n":60,"t":"Бумер","r":7,"v":[{"u":"https://clck.ru/3Th8Fq","l":"На ВК сохранилось только 57 минут фильма"}],"k":57166},{"n":61,"t":"Реквием по мечте","r":10,"v":[{"u":"https://clck.ru/3Th8Ge"}],"k":367},{"n":62,"t":"Детройт, город металла","r":10,"v":[],"k":438979,"kt":"s"},{"n":63,"t":"Одержимость","r":6,"v":[{"u":"https://clck.ru/3Th8HB"}],"k":725190},{"n":64,"t":"Липучка","r":10,"v":[{"u":"https://clck.ru/3Th8JF"}],"k":484470},{"n":65,"t":"Кто там","r":1,"v":[{"u":"https://clck.ru/3Th8Jr"}],"k":838926},{"n":66,"t":"Круэлла","r":8,"v":[{"u":"https://clck.ru/3Th8KA"}],"k":804662},{"n":67,"t":"Разборка в Бронксе","r":10,"v":[{"u":"https://clck.ru/3Th8Ks"}],"k":24693},{"n":68,"t":"Дорога на Эльдорадо","r":10,"v":[{"u":"https://clck.ru/3Th8LJ"}],"k":806},{"n":69,"t":"Губка Боб - квадратные штаны","r":10,"v":[{"u":"https://clck.ru/3Th8Lj"}],"k":35526},{"n":70,"t":"Удачи, веселья, не сдохни","r":6,"v":[{"u":"https://clck.ru/3Th8Me"}],"k":463492},{"n":71,"t":"Супергеройское кино","r":7,"v":[{"u":"https://clck.ru/3Th8N2"}],"k":195941},{"n":72,"t":"Убойный футбол","r":10,"v":[{"u":"https://clck.ru/3Th8NP"}],"k":833},{"n":73,"t":"Пираты Карибского моря: Сундук мертвеца","r":9,"v":[{"u":"https://clck.ru/3Th8Nt"}],"k":63991},{"n":74,"t":"Адвокат дьявола","r":9,"v":[{"u":"https://clck.ru/3UG3qW"}],"k":3797},{"n":75,"t":"Субстанция","r":5,"v":[],"k":4860213},{"n":76,"t":"Разборки в стиле кунг-фу","r":9,"v":[{"u":"https://clck.ru/3UqPjJ"}],"k":61370},{"n":77,"t":"Старикам тут не место","r":null,"v":[{"u":"https://clck.ru/3UwtWH"}],"k":195434},{"n":78,"t":"Трансформеры","r":9,"v":[{"u":"https://clck.ru/3UxVom","l":"Начало на VK"},{"u":"https://clck.ru/3UxVom","l":"Продолжение на WTV"}],"k":81288},{"n":79,"t":"Автостопом по галактике","r":5,"v":[{"u":"https://clck.ru/3V9qXr","l":"Первая часть стрима"},{"u":"https://clck.ru/3V9qYh","l":"Вторая часть стрима"}],"k":79834},{"n":80,"t":"Тихоокеанский рубеж","r":8,"v":[{"u":"https://clck.ru/3VALuD","l":"Первая часть стрима"},{"u":"https://clck.ru/3VALuw","l":"Вторая часть стрима"}],"k":546915},{"n":81,"t":"Трансформеры: Месть падших","r":7,"v":[{"u":"https://clck.ru/3VMWpP"}],"k":373391},{"n":82,"t":"Трансформеры 3: Тёмная сторона Луны","r":8,"v":[{"u":"https://clck.ru/3VNaYo"}],"k":452899},{"n":83,"t":"Стальной гигант","r":9,"v":[{"u":"https://clck.ru/3VfQD5"}],"k":538},{"n":84,"t":"Скуби-Ду","r":1,"v":[{"u":"https://clck.ru/3VfQDe"}],"k":5091}];
 
   var SHEET_URL = "https://docs.google.com/spreadsheets/d/1Gi9gP-zSgAFUlZDpEgG_Q3jsVlHrI5xw1ficb9FZJ4Q/edit";
-  var SHEET_SYNCED = "5 сентября 2026";
+  var SHEET_SYNCED = "6 сентября 2026";
 
   var I = {
     search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
@@ -542,18 +582,21 @@
       (d.has ? '<span class="vod-dot">' + I.play + "</span>" : "") +
       '<span class="pill ' + rClass(m.r) + '">' + d.rate + "</span>" +
       '<span class="chev">' + I.chev + "</span></span></div>" +
-      '<div class="reveal"><div class="reveal-in">' + d.vods + "</div></div></li>";
+      '<div class="reveal"><div class="reveal-clip"><div class="reveal-in">' +
+      d.vods + "</div></div></div></li>";
   }
 
   function tile(m) {
     var d = meta(m);
     return '<li class="tile' + (d.open ? " open" : "") + '">' +
       '<div class="tile-art" role="button" tabindex="0" aria-expanded="' + (d.open ? "true" : "false") +
-      '" data-open="' + m.n + '" title="' + esc(d.sub) + '" style="background:' + tint(m.t) + '">' +
+      '" data-open="' + m.n + '" title="' + esc(d.sub) + '"><div class="flip">' +
+      '<div class="face tile-front" style="background:' + tint(m.t) + '">' +
       d.letter + posterImg(m) +
       '<span class="pill ' + rClass(m.r) + '">' + d.rate + "</span>" +
-      (d.has ? '<span class="vod-dot tile-dot">' + I.play + "</span>" : "") +
-      '<div class="tile-vods">' + d.vods + "</div></div>" +
+      (d.has ? '<span class="vod-dot tile-dot">' + I.play + "</span>" : "") + "</div>" +
+      '<div class="face tile-back" style="background:' + tint(m.t) + '">' + posterImg(m) +
+      '<div class="tile-vods">' + d.vods + "</div></div></div></div>" +
       '<a class="tile-title" href="' + esc(d.kp) + '" target="_blank" rel="noopener noreferrer">' + esc(m.t) + "</a></li>";
   }
 
